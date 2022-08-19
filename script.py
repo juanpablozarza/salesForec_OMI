@@ -1,6 +1,7 @@
-from itertools import chain
-from time import sleep
 
+from json import load
+from time import sleep
+from dotenv.main import load_dotenv
 from selenium.webdriver.support.ui import Select
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
@@ -45,13 +46,13 @@ def InterarSeminarios(driver):
         
 
 # Interar por cada seminario y bajar los archivos
-def connectOMI():
+def connectOMI(username, password):
     driver = webdriver.Chrome('/Users/jpzarza/Downloads/chromedriver 3')
     driver.get("https://portal.openmedicalinstitute.org/login")
     username = driver.find_element(By.ID,"username")
     password = driver.find_element(By.ID, "password")
-    username.send_keys("amsa")
-    password.send_keys("OMI@2021")
+    username.send_keys(username)
+    password.send_keys(password)
     submit = driver.find_element(By.ID,"_submit")
     submit.click()
     driver.get("https://portal.openmedicalinstitute.org/report/loc_participant_list")
@@ -66,7 +67,10 @@ def clearFolder(date):
 
 
 def main():
- driver = connectOMI()
+ load_dotenv()   
+ omiUser = os.environ['USERNAME_OMI']
+ omiPassword = os.environ['PASSWORD_OMI']
+ driver = connectOMI(omiUser, omiPassword)
  InterarSeminarios(driver)
     
 
