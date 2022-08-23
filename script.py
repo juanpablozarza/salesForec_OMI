@@ -18,11 +18,26 @@ def SubirArchivosSalesForce():
     pass
 
 
-def ConnectarseSalesForce():
+def ConnectarseSalesForce(username, password):
     driver = webdriver.Chrome('/Users/jpzarza/Downloads/chromedriver')
     driver.get('https://da0000000iqpxmaw.my.salesforce.com/?ec=301&startURL=%2Fvisualforce%2Fsession%3Furl%3Dhttps%253A%252F%252Fda0000000iqpxmaw.lightning.force.com%252Flightning%252Fo%252FCampaign%252Fhome')
+    username = driver.find_element(By.XPATH, '//*[@id="username"]')
+    password = driver.find_element(By.XPATH, '//*[@id="password"]')
+    username.send_keys(username)
+    password.send_keys(password)
+    sumbit = driver.find_element(By.ID, 'Login')
+    sumbit.click()
+    sleep(3)
+    driver.get('https://da0000000iqpxmaw.lightning.force.com/lightning/o/Campaign/list?filterName=Recent')
+    campaings =  driver.find_element(By.XPATH, '//*[@id="brandBand_1"]/div/div/div/div/div[2]/div/div[1]/div[2]/div[2]/div[1]/div/div/table/tbody')
+    seminarios = os.listdir()
+    for i in campaings:
+        for seminario in seminarios:
+            if(i.text == seminario):
+                pass 
+                # Pasar a importar
     # Connectarse a la pagina de sales force
-    pass
+    
 
 
 def CrearFolder():
@@ -38,7 +53,8 @@ def CrearFolder():
     # Crear folder donde se guardan los archivos
 
 
-def InterarSeminarios(driver): 
+def InterarSeminarios(driver, date): 
+   names = [] 
    for index in range(0,100):
      WebDriverWait(driver,20).until(EC.element_to_be_clickable((By.XPATH, '//*[@id="select2-report_parameter_seminar_ominar_selector_seminar-container"]'))).click()
      sleep(1)
@@ -46,6 +62,9 @@ def InterarSeminarios(driver):
      chains.send_keys(Keys.ARROW_DOWN +Keys.ARROW_DOWN + Keys.ARROW_UP + Keys.ENTER)
      chains.perform()
      sleep(1)
+     name = driver.find_element(By.ID, 'select2-report_parameter_seminar_ominar_selector_seminar-container')
+     title = name.get_attribute('title')
+     names.append(title)
      WebDriverWait(driver,20).until(EC.element_to_be_clickable((By.XPATH, '//*[@id="report_parameter_seminar_ominar_selector"]/div[2]/span'))).click()
      chains.send_keys( Keys.ENTER)
      sleep(1)
@@ -56,9 +75,15 @@ def InterarSeminarios(driver):
      sleep(5)
      download.click()
      sleep(3)
-   
-
-
+     cwd = os.getcwd()
+     
+     if(index == 0):
+         old_path = cwd + '/AMSA/' + str(date) + '/participants-list.xlsx'
+     else: 
+         old_path = cwd+ '/AMSA/'+ str(date) + '/participants-list('+ str(index)+ ').xlsx'
+     new_path = cwd + '/AMSA/'+ str(date) + '/'+str(title) +'.xlsx'
+     os.rename(old_path, new_path)
+   return names;
         
 
 # Interar por cada seminario y bajar los archivos
@@ -86,9 +111,12 @@ def main():
  load_dotenv()   
  omiUser = os.getenv('USERNAME_OMI')
  omiPassword = os.getenv('PASSWORD_OMI')
+ salesforceUsername = os.getenv('USERNAME_SALESFORCE')
+ salesforcePassword = os.getenv('PASSWORD_SALESFORCE')
  date, options = CrearFolder()
  driver = connectOMI(omiUser, omiPassword, options)
- InterarSeminarios(driver)
+ titulos = InterarSeminarios(driver, date)
+ ConnectarseSalesForce(salesforceUsername, salesforcePassword)
  clearFolder(date)
 
 
