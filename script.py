@@ -1,3 +1,4 @@
+from threading import main_thread
 import urllib
 from time import sleep
 
@@ -32,11 +33,7 @@ def ConnectarseSalesForce(username, password):
     campaings =  driver.find_element(By.XPATH, '//*[@id="brandBand_1"]/div/div/div/div/div[2]/div/div[1]/div[2]/div[2]/div[1]/div/div/table/tbody')
     seminarios = os.listdir()
     for i in campaings:
-        for seminario in seminarios:
-            if(i.text == seminario):
-                pass 
-                # Pasar a importar
-    # Connectarse a la pagina de sales force
+       print(i.text)
     
 
 
@@ -52,6 +49,9 @@ def CrearFolder():
     return date, options
     # Crear folder donde se guardan los archivos
 
+def regexNames(name):
+    result = str(name[:-11] + '20' + name[-3:-1])
+    return result
 
 def InterarSeminarios(driver, date): 
    names = [] 
@@ -64,7 +64,8 @@ def InterarSeminarios(driver, date):
      sleep(1)
      name = driver.find_element(By.ID, 'select2-report_parameter_seminar_ominar_selector_seminar-container')
      title = name.get_attribute('title')
-     names.append(title)
+     modified_name = regexNames(title)
+     names.append(modified_name)
      WebDriverWait(driver,20).until(EC.element_to_be_clickable((By.XPATH, '//*[@id="report_parameter_seminar_ominar_selector"]/div[2]/span'))).click()
      chains.send_keys( Keys.ENTER)
      sleep(1)
@@ -76,12 +77,8 @@ def InterarSeminarios(driver, date):
      download.click()
      sleep(3)
      cwd = os.getcwd()
-     
-     if(index == 0):
-         old_path = cwd + '/AMSA/' + str(date) + '/participants-list.xlsx'
-     else: 
-         old_path = cwd+ '/AMSA/'+ str(date) + '/participants-list('+ str(index)+ ').xlsx'
-     new_path = cwd + '/AMSA/'+ str(date) + '/'+str(title) +'.xlsx'
+     old_path = cwd + '/AMSA/' + str(date) + '/participants-list.xlsx'   
+     new_path = cwd + '/AMSA/'+ str(date) + '/'+str(modified_name) +'.xlsx'
      os.rename(old_path, new_path)
    return names;
         
@@ -118,6 +115,5 @@ def main():
  titulos = InterarSeminarios(driver, date)
  ConnectarseSalesForce(salesforceUsername, salesforcePassword)
  clearFolder(date)
-
 
 main()
