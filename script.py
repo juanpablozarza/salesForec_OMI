@@ -1,10 +1,9 @@
-from threading import main_thread
-import urllib
-from time import sleep
 
-from requests import options
+from time import sleep
+from numpy import choose
+import pandas as pd
+from requests import head, options
 from dotenv import load_dotenv
-from selenium.webdriver.support.ui import Select
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.by import By
@@ -15,10 +14,31 @@ import datetime
 from selenium.webdriver.common.action_chains import ActionChains
 
 
-def SubirArchivosSalesForce():
+def subirArchivosSalesForce(driver, name):
     # Subir archivos a Sales force
-    pass
+    buttonDown = driver.find_element(By.XPATH, '/html/body/div[4]/div[1]/section/div[1]/div[2]/div[2]/div[1]/div/div/div/div/div/div[1]/div/div[3]/div[1]/div/div/section/div/div/div/div[1]/article/div[1]/div/div/ul/li[3]/div/div/div/div/a')
+    buttonDown.click()
+    sleep(1)
+    importLeads = driver.find_element(By.XPATH, '/html/body/div[10]/div/ul/li[2]/a')
+    importLeads.click()
+    sleep(30)
+    driver.switch_to.frame(driver.find_element(By.XPATH, '/html/body/div[4]/div[1]/section/div[1]/div/div[2]/div[2]/section[1]/div/div/section/div/div[2]/div/div/div/force-aloha-page/div/iframe'))
+    accountsAndLeads = driver.find_element(By.XPATH, '/html/body/div[4]/div[1]/div[2]/div[1]/div/div[2]/table/tbody/tr[3]/td/a')
+    accountsAndLeads.click()
+    sleep(1)
+    updateAndAdd = driver.find_element(By.XPATH, '/html/body/div[4]/div[1]/div[2]/div[2]/div/div[2]/table/tbody/tr[3]/td/a')
+    updateAndAdd.click()
+    sleep(1)
+    csvdoc=driver.find_element(By.XPATH, '/html/body/div[4]/div[1]/div[2]/div[3]/div/div[3]/a')
+    csvdoc.click()
+    chooseFile = driver.find_element(By.XPATH, '/html/body/div[4]/div[1]/div[2]/div[3]/div/div[3]/a/div/div[2]/form/input')
+    fileToUpload = os.getcwd() + 'AMSA/CSV'+ name + '.csv'
+    chooseFile.send_keys(fileToUpload)
 
+def xlmsToCSV(path, name):
+    df = pd.read_excel(path)
+    pathToDownlad = os.getcwd() + 'AMSA/CSV' + name + '.csv'
+    df.to_csv(pathToDownlad, index=False , header=True )
 
 def ConnectarseSalesForce(username, password, names):
     driver = webdriver.Chrome("/Users/jpzarza/Downloads/chromedriver 3")
@@ -37,6 +57,7 @@ def ConnectarseSalesForce(username, password, names):
         "https://da0000000iqpxmaw.lightning.force.com/lightning/o/Campaign/list?filterName=Recent"
     )
     sleep(5)
+    driver
     for name in names:
        searchBox = driver.find_element(By.XPATH, '/html/body/div[4]/div[1]/section/div[1]/div[2]/div[1]/div/div/div/div/div/div/div/div[1]/div[2]/div[2]/force-list-view-manager-search-bar/div/lightning-input/div/input') 
        searchBox.click()
@@ -49,15 +70,23 @@ def ConnectarseSalesForce(username, password, names):
        result = driver.find_element(By.XPATH, '//*[@id="brandBand_1"]/div/div/div/div/div[2]/div/div[1]/div[2]/div[2]/div[1]/div/div/table/tbody/tr/th/span')
        result.click()
        sleep(5)
+        # Subir archivo
+       subirArchivosSalesForce(driver, name)
+        # Regresar a pagina principal
+       driver.get("https://da0000000iqpxmaw.lightning.force.com/lightning/o/Campaign/list?filterName=Recent")
+       sleep(2)
 
 
 
 def CrearFolder():
     date = datetime.date.today()
     cwd = os.getcwd()
-    dire = "AMSA/" + str(date) + ""
+    dire = "AMSA/" + "Excel"
+    secondDire = 'AMSA/' + 'CSV'
     path = os.path.join(cwd, dire)
+    secondPath = os.path.join(cwd, secondDire)
     os.makedirs(path)
+    os.makedirs(secondPath)
     options = webdriver.ChromeOptions()
     prefs = {"download.default_directory": path}
     options.add_experimental_option("prefs", prefs)
@@ -113,6 +142,7 @@ def InterarSeminarios(driver, date):
         old_path = cwd + "/AMSA/" + str(date) + "/participants-list.xlsx"
         new_path = cwd + "/AMSA/" + str(date) + "/" + str(modified_name) + ".xlsx"
         os.rename(old_path, new_path)
+        xlmsToCSV(new_path,str(modified_name))
     return names
 
 
@@ -145,10 +175,10 @@ def main():
     omiPassword = os.getenv("PASSWORD_OMI")
     salesforceUsername = os.getenv("USERNAME_SALESFORCE")
     salesforcePassword = os.getenv("PASSWORD_SALESFORCE")
-    # date, options = CrearFolder()
+    date, options = CrearFolder()
     # driver = connectOMI(omiUser, omiPassword, options)
     # titulos = InterarSeminarios(driver, date)
-    ConnectarseSalesForce(salesforceUsername, salesforcePassword, ['Medical Leadership 2023', 'Anesthesiology and Intensive Care 2023', 'ESU Master Class in Urology 2023'])
+    # ConnectarseSalesForce(salesforceUsername, salesforcePassword, ['Medical Leadership 2023', 'Anesthesiology and Intensive Care 2023', 'ESU Master Class in Urology 2023'])
     # clearFolder(date)
 
 
