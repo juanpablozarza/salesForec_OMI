@@ -1,6 +1,6 @@
 
 from time import sleep
-from numpy import choose
+from numpy import append, choose
 import pandas as pd
 from requests import head, options
 from dotenv import load_dotenv
@@ -36,11 +36,14 @@ def subirArchivosSalesForce(driver, name):
     chooseFile.send_keys(fileToUpload)
 
 def xlmsToCSV(path, name):
+    print(path)
     df = pd.read_excel(path)
-    pathToDownlad = os.getcwd() + 'AMSA/CSV' + name + '.csv'
+    pathToDownlad = os.getcwd() + '/AMSA/CSV/' + name + '.csv'
+    print(pathToDownlad)
     df.to_csv(pathToDownlad, index=False , header=True )
 
 def ConnectarseSalesForce(username, password, names):
+    notUploaded = [];
     driver = webdriver.Chrome("/Users/jpzarza/Downloads/chromedriver 3")
     driver.get(
         "https://da0000000iqpxmaw.my.salesforce.com/?ec=301&startURL=%2Fvisualforce%2Fsession%3Furl%3Dhttps%253A%252F%252Fda0000000iqpxmaw.lightning.force.com%252Flightning%252Fo%252FCampaign%252Fhome"
@@ -67,11 +70,14 @@ def ConnectarseSalesForce(username, password, names):
        chains.send_keys(Keys.ENTER)
        chains.perform()
        sleep(5)
-       result = driver.find_element(By.XPATH, '//*[@id="brandBand_1"]/div/div/div/div/div[2]/div/div[1]/div[2]/div[2]/div[1]/div/div/table/tbody/tr/th/span')
-       result.click()
+       try:
+           result = driver.find_element(By.XPATH, '//*[@id="brandBand_1"]/div/div/div/div/div[2]/div/div[1]/div[2]/div[2]/div[1]/div/div/table/tbody/tr/th/span');result.click()
+           sleep(5)
+           subirArchivosSalesForce(driver, name)
+       except:
+           notUploaded.append(name);
+       
        sleep(5)
-        # Subir archivo
-       subirArchivosSalesForce(driver, name)
         # Regresar a pagina principal
        driver.get("https://da0000000iqpxmaw.lightning.force.com/lightning/o/Campaign/list?filterName=Recent")
        sleep(2)
@@ -90,6 +96,7 @@ def CrearFolder():
     options = webdriver.ChromeOptions()
     prefs = {"download.default_directory": path}
     options.add_experimental_option("prefs", prefs)
+    # options.add_argument('--remote-debugging-port= ')
     return date, options
     # Crear folder donde se guardan los archivos
 
@@ -99,7 +106,7 @@ def regexNames(name):
     return result
 
 
-def InterarSeminarios(driver, date):
+def InterarSeminarios(driver):
     names = []
     for index in range(0, 100):
         WebDriverWait(driver, 20).until(
@@ -139,10 +146,10 @@ def InterarSeminarios(driver, date):
         download.click()
         sleep(3)
         cwd = os.getcwd()
-        old_path = cwd + "/AMSA/" + str(date) + "/participants-list.xlsx"
-        new_path = cwd + "/AMSA/" + str(date) + "/" + str(modified_name) + ".xlsx"
+        old_path = cwd + "/AMSA/Excel"  + "/participants-list.xlsx"
+        new_path = cwd + "/AMSA/Excel" + "/" + str(modified_name) + ".xlsx"
         os.rename(old_path, new_path)
-        xlmsToCSV(new_path,str(modified_name))
+        xlmsToCSV(new_path , str(modified_name))
     return names
 
 
@@ -176,10 +183,10 @@ def main():
     salesforceUsername = os.getenv("USERNAME_SALESFORCE")
     salesforcePassword = os.getenv("PASSWORD_SALESFORCE")
     date, options = CrearFolder()
-    # driver = connectOMI(omiUser, omiPassword, options)
-    # titulos = InterarSeminarios(driver, date)
-    # ConnectarseSalesForce(salesforceUsername, salesforcePassword, ['Medical Leadership 2023', 'Anesthesiology and Intensive Care 2023', 'ESU Master Class in Urology 2023'])
-    # clearFolder(date)
+    driver = connectOMI(omiUser, omiPassword, options)
+    titulos = InterarSeminarios(driver)
+    ConnectarseSalesForce(salesforceUsername, salesforcePassword,titulos)
+    clearFolder(date)
 
 
 main()
